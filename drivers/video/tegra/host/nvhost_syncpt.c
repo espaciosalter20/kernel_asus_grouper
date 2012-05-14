@@ -21,6 +21,8 @@
 #include <linux/nvhost_ioctl.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
+#include <linux/stat.h>
+#include <trace/events/nvhost.h>
 #include "nvhost_syncpt.h"
 #include "nvhost_acm.h"
 #include "dev.h"
@@ -70,9 +72,14 @@ void nvhost_syncpt_save(struct nvhost_syncpt *sp)
  */
 u32 nvhost_syncpt_update_min(struct nvhost_syncpt *sp, u32 id)
 {
+	u32 val;
+
 	BUG_ON(!syncpt_op(sp).update_min);
 
-	return syncpt_op(sp).update_min(sp, id);
+	val = syncpt_op(sp).update_min(sp, id);
+	trace_nvhost_syncpt_update_min(id, val);
+
+	return val;
 }
 
 /**
@@ -122,19 +129,6 @@ void nvhost_syncpt_incr(struct nvhost_syncpt *sp, u32 id)
 	nvhost_module_busy(syncpt_to_dev(sp)->dev);
 	nvhost_syncpt_cpu_incr(sp, id);
 	nvhost_module_idle(syncpt_to_dev(sp)->dev);
-}
-
-/**
- * Updated sync point form hardware, and returns true if syncpoint is expired,
- * false if we may need to wait
- */
-static bool syncpt_update_min_is_expired(
-	struct nvhost_syncpt *sp,
-	u32 id,
-	u32 thresh)
-{
-	syncpt_op(sp).update_min(sp, id);
-	return nvhost_syncpt_is_expired(sp, id, thresh);
 }
 
 /**
@@ -198,9 +192,9 @@ int nvhost_syncpt_wait_timeout(struct nvhost_syncpt *sp, u32 id,
 	while (timeout) {
 		u32 check = min_t(u32, SYNCPT_CHECK_PERIOD, timeout);
 		int remain = wait_event_interruptible_timeout(wq,
-				syncpt_update_min_is_expired(sp, id, thresh),
+				nvhost_syncpt_is_expired(sp, id, thresh),
 				check);
-		if (remain > 0 || nvhost_syncpt_is_expired(sp, id, thresh)) {
+		if (remain > 0) {
 			if (value)
 				*value = nvhost_syncpt_read_min(sp, id);
 			err = 0;
