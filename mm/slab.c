@@ -3272,12 +3272,10 @@ static void *alternate_node_alloc(struct kmem_cache *cachep, gfp_t flags)
 	if (in_interrupt() || (flags & __GFP_THISNODE))
 		return NULL;
 	nid_alloc = nid_here = numa_mem_id();
-	get_mems_allowed();
 	if (cpuset_do_slab_mem_spread() && (cachep->flags & SLAB_MEM_SPREAD))
 		nid_alloc = cpuset_slab_spread_node();
 	else if (current->mempolicy)
 		nid_alloc = slab_node(current->mempolicy);
-	put_mems_allowed();
 	if (nid_alloc != nid_here)
 		return ____cache_alloc_node(cachep, flags, nid_alloc);
 	return NULL;
@@ -3300,13 +3298,16 @@ static void *fallback_alloc(struct kmem_cache *cache, gfp_t flags)
 	enum zone_type high_zoneidx = gfp_zone(flags);
 	void *obj = NULL;
 	int nid;
+	unsigned int cpuset_mems_cookie;
 
 	if (flags & __GFP_THISNODE)
 		return NULL;
 
-	get_mems_allowed();
-	zonelist = node_zonelist(slab_node(current->mempolicy), flags);
 	local_flags = flags & (GFP_CONSTRAINT_MASK|GFP_RECLAIM_MASK);
+
+retry_cpuset:
+	cpuset_mems_cookie = get_mems_allowed();
+	zonelist = node_zonelist(slab_node(current->mempolicy), flags);
 
 retry:
 	/*
@@ -3360,7 +3361,9 @@ retry:
 			}
 		}
 	}
-	put_mems_allowed();
+
+	if (unlikely(!put_mems_allowed(cpuset_mems_cookie) && !obj))
+		goto retry_cpuset;
 	return obj;
 }
 
@@ -4587,7 +4590,7 @@ static const struct file_operations proc_slabstats_operations = {
 
 static int __init slab_proc_init(void)
 {
-	proc_create("slabinfo",S_IWUSR|S_IRUGO,NULL,&proc_slabinfo_operations);
+	proc_create("slabinfo",S_IWUSR|S_IRUSR,NULL,&proc_slabinfo_operations);
 #ifdef CONFIG_DEBUG_SLAB_LEAK
 	proc_create("slab_allocators", 0, NULL, &proc_slabstats_operations);
 #endif
