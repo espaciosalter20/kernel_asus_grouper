@@ -1539,6 +1539,12 @@ static inline void vm_stat_account(struct mm_struct *mm,
 
 #ifdef CONFIG_DEBUG_PAGEALLOC
 extern int debug_pagealloc_enabled;
+extern unsigned int _debug_guardpage_minorder;
+
+static inline unsigned int debug_guardpage_minorder(void)
+{
+	return _debug_guardpage_minorder;
+}
 
 extern void kernel_map_pages(struct page *page, int numpages, int enable);
 
@@ -1550,6 +1556,7 @@ static inline void enable_debug_pagealloc(void)
 extern bool kernel_page_present(struct page *page);
 #endif /* CONFIG_HIBERNATION */
 #else
+static inline unsigned int debug_guardpage_minorder(void) { return 0; }
 static inline void
 kernel_map_pages(struct page *page, int numpages, int enable) {}
 static inline void enable_debug_pagealloc(void)
