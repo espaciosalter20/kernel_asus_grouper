@@ -1239,9 +1239,9 @@ static int __devinit smb347_probe(struct i2c_client *client,
 	wake_lock_init(&charger->wake_lock_dockin, WAKE_LOCK_SUSPEND, "wake_lock_dockin");
 
 	smb347_wq = create_singlethread_workqueue("smb347_wq");
-	INIT_DELAYED_WORK_DEFERRABLE(&charger->inok_isr_work, inok_isr_work_function);
-	INIT_DELAYED_WORK_DEFERRABLE(&charger->dockin_isr_work, dockin_isr_work_function);
-	INIT_DELAYED_WORK_DEFERRABLE(&charger->cable_det_work, cable_type_detect);
+	INIT_DEFERRABLE_WORK(&charger->inok_isr_work, inok_isr_work_function);
+	INIT_DEFERRABLE_WORK(&charger->dockin_isr_work, dockin_isr_work_function);
+	INIT_DEFERRABLE_WORK(&charger->cable_det_work, cable_type_detect);
 
 	wake_lock_init(&charger_wakelock, WAKE_LOCK_SUSPEND,
 			"charger_configuration");

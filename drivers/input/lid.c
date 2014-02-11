@@ -169,7 +169,7 @@ static int __init lid_init(void)
 	if(err_code != 0)
 		return err_code;
 	lid_wq = create_singlethread_workqueue("lid_wq");
-	INIT_DELAYED_WORK_DEFERRABLE(&lid_hall_sensor_work, lid_report_function);
+	INIT_DEFERRABLE_WORK(&lid_hall_sensor_work, lid_report_function);
 
 	lid_irq_hall_sensor();
 
