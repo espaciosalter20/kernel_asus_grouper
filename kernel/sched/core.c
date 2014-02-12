@@ -81,9 +81,9 @@
 #include <asm/paravirt.h>
 #endif
 
-#include "sched_cpupri.h"
-#include "workqueue_sched.h"
-#include "sched_autogroup.h"
+#include "cpupri.h"
+#include "../workqueue_sched.h"
+#include "autogroup.h"
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
@@ -829,7 +829,7 @@ int runqueue_is_locked(int cpu)
 	__SCHED_FEAT_##name ,
 
 enum {
-#include "sched_features.h"
+#include "features.h"
 };
 
 #undef SCHED_FEAT
@@ -838,7 +838,7 @@ enum {
 	(1UL << __SCHED_FEAT_##name) * enabled |
 
 const_debug unsigned int sysctl_sched_features =
-#include "sched_features.h"
+#include "features.h"
 	0;
 
 #undef SCHED_FEAT
@@ -848,7 +848,7 @@ const_debug unsigned int sysctl_sched_features =
 	#name ,
 
 static __read_mostly char *sched_feat_names[] = {
-#include "sched_features.h"
+#include "features.h"
 	NULL
 };
 
@@ -1907,7 +1907,7 @@ static const struct sched_class rt_sched_class;
 #define for_each_class(class) \
    for (class = sched_class_highest; class; class = class->next)
 
-#include "sched_stats.h"
+#include "stats.h"
 
 static void inc_nr_running(struct rq *rq)
 {
@@ -2190,13 +2190,13 @@ static int irqtime_account_si_update(void)
 
 #endif
 
-#include "sched_idletask.c"
-#include "sched_fair.c"
-#include "sched_rt.c"
-#include "sched_autogroup.c"
-#include "sched_stoptask.c"
+#include "idle_task.c"
+#include "fair.c"
+#include "rt.c"
+#include "autogroup.c"
+#include "stoptask.c"
 #ifdef CONFIG_SCHED_DEBUG
-# include "sched_debug.c"
+# include "debug.c"
 #endif
 
 void sched_set_stop_task(int cpu, struct task_struct *stop)
