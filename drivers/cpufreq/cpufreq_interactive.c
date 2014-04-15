@@ -963,7 +963,7 @@ static ssize_t store_timer_rate(struct kobject *kobj,
 
 static struct global_attr timer_rate_attr = __ATTR(timer_rate, 0644,
 		show_timer_rate, store_timer_rate);
-
+/*
 static ssize_t show_input_boost(struct kobject *kobj, struct attribute *attr,
 				char *buf)
 {
@@ -983,7 +983,7 @@ static ssize_t store_input_boost(struct kobject *kobj, struct attribute *attr,
 	return count;
 }
 
-define_one_global_rw(input_boost);
+define_one_global_rw(input_boost);*/
 
 static ssize_t show_boost(struct kobject *kobj, struct attribute *attr,
 			  char *buf)
@@ -1025,7 +1025,7 @@ static struct attribute *interactive_attributes[] = {
 	&above_hispeed_delay.attr,
 	&min_sample_time_attr.attr,
 	&timer_rate_attr.attr,
-	&input_boost.attr,
+	//&input_boost.attr,
 	&boost.attr,
 	NULL,
 };
@@ -1088,10 +1088,10 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		if (rc)
 			return rc;
 
-		rc = input_register_handler(&cpufreq_interactive_input_handler);
+		/*rc = input_register_handler(&cpufreq_interactive_input_handler);
 		if (rc)
 			pr_warn("%s: failed to register input handler\n",
-				__func__);
+				__func__);*/
 
 		break;
 
@@ -1115,7 +1115,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		if (atomic_dec_return(&active_count) > 0)
 			return 0;
 
-		input_unregister_handler(&cpufreq_interactive_input_handler);
+		//input_unregister_handler(&cpufreq_interactive_input_handler);
 		sysfs_remove_group(cpufreq_global_kobject,
 				&interactive_attr_group);
 
