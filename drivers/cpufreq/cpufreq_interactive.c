@@ -128,7 +128,7 @@ static unsigned long above_hispeed_delay_val = DEFAULT_ABOVE_HISPEED_DELAY;
 /*
  * Boost pulse to hispeed on touchscreen input.
  */
-static int input_boost_val;
+static int input_boost_val = 0;
 
 struct cpufreq_interactive_inputopen {
 	struct input_handle *handle;
