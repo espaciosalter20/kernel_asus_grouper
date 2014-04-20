@@ -324,7 +324,8 @@ static int tegra_cpu_edp_notify(
 		edp_update_limit();
 
 		cpu_speed = tegra_getspeed(0);
-		new_speed = edp_governor_speed(cpu_speed);
+		//new_speed = edp_governor_speed(cpu_speed);
+		new_speed = cpu_speed;
 		if (new_speed < cpu_speed) {
 			ret = tegra_cpu_set_speed_cap(NULL);
 			if (ret) {
@@ -585,7 +586,7 @@ int tegra_cpu_set_speed_cap(unsigned int *speed_cap)
 		return -EBUSY;
 
 	new_speed = tegra_throttle_governor_speed(new_speed);
-	new_speed = edp_governor_speed(new_speed);
+	//new_speed = edp_governor_speed(new_speed);
 	new_speed = user_cap_speed(new_speed);
 	if (speed_cap)
 		*speed_cap = new_speed;
@@ -605,7 +606,7 @@ int tegra_suspended_target(unsigned int target_freq)
 
 	/* apply only "hard" caps */
 	new_speed = tegra_throttle_governor_speed(new_speed);
-	new_speed = edp_governor_speed(new_speed);
+	//new_speed = edp_governor_speed(new_speed);
 
 	return tegra_update_cpu_speed(new_speed);
 }
@@ -689,7 +690,8 @@ static int tegra_cpu_init(struct cpufreq_policy *policy)
 	target_cpu_speed[policy->cpu] = policy->cur;
 
 	/* FIXME: what's the actual transition time? */
-	policy->cpuinfo.transition_latency = 300 * 1000;
+	policy->cpuinfo.transition_latency = 400;
+	//legolas93 - I know it's wrong but work better
 
 	policy->shared_type = CPUFREQ_SHARED_TYPE_ALL;
 	cpumask_copy(policy->related_cpus, cpu_possible_mask);
