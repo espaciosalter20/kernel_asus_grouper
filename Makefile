@@ -365,9 +365,9 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common -fold-unroll-loops\
-		   -Werror-implicit-function-declaration -mfpu=neon-vfpv3\
-		   -Wno-format-security -march=armv7-a\
+		   -fno-strict-aliasing -fno-common\
+		   -Werror-implicit-function-declaration -mfpu=neon\
+		   -Wno-format-security -march=armv7-a -O3\
        -fmodulo-sched -fmodulo-sched-allow-regmoves -mtune=cortex-a9 \
        -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
 		   -fno-delete-null-pointer-checks
