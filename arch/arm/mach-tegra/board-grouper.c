@@ -1089,17 +1089,17 @@ static void __init tegra_grouper_init(void)
 	grouper_booting_info();
 	grouper_i2c_init();
 	grouper_spi_init();
-	grouper_usb_init();
+	grouper_usb_init();/*
 #ifdef CONFIG_TEGRA_EDP_LIMITS
 	if (grouper_query_pmic_id())
 		grouper_ti_edp_init();
 	else
 		grouper_edp_init();
-#endif
+#endif*/
 	grouper_uart_init();
 	grouper_audio_init();
 	platform_add_devices(grouper_devices, ARRAY_SIZE(grouper_devices));
-	tegra_ram_console_debug_init();
+	//tegra_ram_console_debug_init();
 	grouper_sdhci_init();
 	if (grouper_query_pmic_id()) {
 		grouper_ti_regulator_init();

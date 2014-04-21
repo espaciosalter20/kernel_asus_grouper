@@ -469,8 +469,7 @@ unsigned int tegra_getspeed(unsigned int cpu)
 	rate = clk_get_rate(cpu_clk) / 1000;
 	return rate;
 }
-//extern bool stress_test_enable;
-bool stress_test_enable = false;
+
 int tegra_update_cpu_speed(unsigned long rate)
 {
 	int ret = 0;
@@ -507,10 +506,6 @@ int tegra_update_cpu_speed(unsigned long rate)
 
 	for_each_online_cpu(freqs.cpu)
 		cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
-
-	if(stress_test_enable)
-		printk(KERN_DEBUG "cpufreq-tegra: transition: %u --> %u\n",
-			freqs.old, freqs.new);
 
 	ret = clk_set_rate(cpu_clk, freqs.new * 1000);
 	if (ret) {
@@ -755,8 +750,8 @@ static int __init tegra_cpufreq_init(void)
 
 	struct tegra_cpufreq_table_data *table_data =
 		tegra_cpufreq_table_get();
-	if (IS_ERR_OR_NULL(table_data))
-		return -EINVAL;
+	/*if (IS_ERR_OR_NULL(table_data))
+		return -EINVAL;*/
 
 	suspend_index = table_data->suspend_index;
 
@@ -769,7 +764,7 @@ static int __init tegra_cpufreq_init(void)
 		return ret;
 
 	freq_table = table_data->freq_table;
-	tegra_cpu_edp_init(false);
+	//tegra_cpu_edp_init(false);
 
 	ret = cpufreq_register_notifier(
 		&tegra_cpufreq_policy_nb, CPUFREQ_POLICY_NOTIFIER);
@@ -782,7 +777,7 @@ static int __init tegra_cpufreq_init(void)
 static void __exit tegra_cpufreq_exit(void)
 {
 	tegra_throttle_exit();
-	tegra_cpu_edp_exit();
+	//tegra_cpu_edp_exit();
 	tegra_auto_hotplug_exit();
 	cpufreq_unregister_driver(&tegra_cpufreq_driver);
 	cpufreq_unregister_notifier(

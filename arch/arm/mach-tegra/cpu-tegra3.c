@@ -39,8 +39,8 @@
 #include "clock.h"
 
 #define INITIAL_STATE		TEGRA_HP_DISABLED
-#define UP2G0_DELAY_MS		70
-#define UP2Gn_DELAY_MS		100
+#define UP2G0_DELAY_MS		50
+#define UP2Gn_DELAY_MS		60
 #define DOWN_DELAY_MS		2000
 
 static struct mutex *tegra3_cpu_lock;
@@ -63,66 +63,16 @@ static unsigned int idle_bottom_freq;
 module_param(idle_top_freq, uint, 0644);
 module_param(idle_bottom_freq, uint, 0644);
 
+/*
 static int mp_overhead = 10;
-module_param(mp_overhead, int, 0644);
+module_param(mp_overhead, int, 0644);*/
 
-static int balance_level = 75;
+static int balance_level = 70;
 module_param(balance_level, int, 0644);
 
 static struct clk *cpu_clk;
 static struct clk *cpu_g_clk;
 static struct clk *cpu_lp_clk;
-
-static struct {
-	cputime64_t time_up_total;
-	u64 last_update;
-	unsigned int up_down_count;
-} hp_stats[CONFIG_NR_CPUS + 1];	/* Append LP CPU entry at the end */
-
-static void hp_init_stats(void)
-{
-	int i;
-	u64 cur_jiffies = get_jiffies_64();
-
-	for (i = 0; i <= CONFIG_NR_CPUS; i++) {
-		hp_stats[i].time_up_total = 0;
-		hp_stats[i].last_update = cur_jiffies;
-
-		hp_stats[i].up_down_count = 0;
-		if (is_lp_cluster()) {
-			if (i == CONFIG_NR_CPUS)
-				hp_stats[i].up_down_count = 1;
-		} else {
-			if ((i < nr_cpu_ids) && cpu_online(i))
-				hp_stats[i].up_down_count = 1;
-		}
-	}
-
-}
-
-static void hp_stats_update(unsigned int cpu, bool up)
-{
-	u64 cur_jiffies = get_jiffies_64();
-	bool was_up = hp_stats[cpu].up_down_count & 0x1;
-
-	if (was_up)
-		hp_stats[cpu].time_up_total = cputime64_add(
-			hp_stats[cpu].time_up_total, cputime64_sub(
-				cur_jiffies, hp_stats[cpu].last_update));
-
-	if (was_up != up) {
-		hp_stats[cpu].up_down_count++;
-		if ((hp_stats[cpu].up_down_count & 0x1) != up) {
-			/* FIXME: sysfs user space CPU control breaks stats */
-			pr_err("tegra hotplug stats out of sync with %s CPU%d",
-			       (cpu < CONFIG_NR_CPUS) ? "G" : "LP",
-			       (cpu < CONFIG_NR_CPUS) ?  cpu : 0);
-			hp_stats[cpu].up_down_count ^=  0x1;
-		}
-	}
-	hp_stats[cpu].last_update = cur_jiffies;
-}
-
 
 enum {
 	TEGRA_HP_DISABLED = 0,
@@ -152,7 +102,6 @@ static int hp_state_set(const char *arg, const struct kernel_param *kp)
 		else if (hp_state != TEGRA_HP_DISABLED) {
 			if (old_state == TEGRA_HP_DISABLED) {
 				pr_info("Tegra auto-hotplug enabled\n");
-				hp_init_stats();
 			}
 			/* catch-up with governor target speed */
 			tegra_cpu_set_speed_cap(NULL);
@@ -195,14 +144,14 @@ static noinline int tegra_cpu_speed_balance(void)
 	/* balanced: freq targets for all CPUs are above 50% of highest speed
 	   biased: freq target for at least one CPU is below 50% threshold
 	   skewed: freq targets for at least 2 CPUs are below 25% threshold */
-	if (((tegra_count_slow_cpus(skewed_speed) >= 2) ||
-	     tegra_cpu_edp_favor_down(nr_cpus, mp_overhead) ||
+	if (((tegra_count_slow_cpus(skewed_speed) >= 2) /*||
+	     tegra_cpu_edp_favor_down(nr_cpus, mp_overhead)*/ ||
 	     (highest_speed <= idle_bottom_freq) || (nr_cpus > max_cpus)) &&
 	    (nr_cpus > min_cpus))
 		return TEGRA_CPU_SPEED_SKEWED;
 
-	if (((tegra_count_slow_cpus(balanced_speed) >= 1) ||
-	     (!tegra_cpu_edp_favor_up(nr_cpus, mp_overhead)) ||
+	if (((tegra_count_slow_cpus(balanced_speed) >= 1) /*||
+	     (!tegra_cpu_edp_favor_up(nr_cpus, mp_overhead))*/ ||
 	     (highest_speed <= idle_bottom_freq) || (nr_cpus == max_cpus)) &&
 	    (nr_cpus >= min_cpus))
 		return TEGRA_CPU_SPEED_BIASED;
@@ -234,8 +183,6 @@ static void tegra_auto_hotplug_work_func(struct work_struct *work)
 		} else if (!is_lp_cluster() && !no_lp &&
 			   !pm_qos_request(PM_QOS_MIN_ONLINE_CPUS)) {
 			if(!clk_set_parent(cpu_clk, cpu_lp_clk)) {
-				hp_stats_update(CONFIG_NR_CPUS, true);
-				hp_stats_update(0, false);
 				/* catch-up with governor target speed */
 				tegra_cpu_set_speed_cap(NULL);
 				break;
@@ -247,8 +194,6 @@ static void tegra_auto_hotplug_work_func(struct work_struct *work)
 	case TEGRA_HP_UP:
 		if (is_lp_cluster() && !no_lp) {
 			if(!clk_set_parent(cpu_clk, cpu_g_clk)) {
-				hp_stats_update(CONFIG_NR_CPUS, false);
-				hp_stats_update(0, true);
 				/* catch-up with governor target speed */
 				tegra_cpu_set_speed_cap(NULL);
 			}
@@ -280,12 +225,13 @@ static void tegra_auto_hotplug_work_func(struct work_struct *work)
 		       __func__, hp_state);
 	}
 
-	if (!up && ((now - last_change_time) < down_delay))
-			cpu = nr_cpu_ids;
+	if (!up && ((now - last_change_time) < down_delay)){
+	  mutex_unlock(tegra3_cpu_lock);
+	  return;
+	}
 
 	if (cpu < nr_cpu_ids) {
 		last_change_time = now;
-		hp_stats_update(cpu, up);
 	}
 	mutex_unlock(tegra3_cpu_lock);
 
@@ -307,10 +253,7 @@ static int min_cpus_notify(struct notifier_block *nb, unsigned long n, void *p)
 			tegra_getspeed(0), clk_get_min_rate(cpu_g_clk) / 1000);
 		tegra_update_cpu_speed(speed);
 
-		if (!clk_set_parent(cpu_clk, cpu_g_clk)) {
-			hp_stats_update(CONFIG_NR_CPUS, false);
-			hp_stats_update(0, true);
-		}
+    clk_set_parent(cpu_clk, cpu_g_clk);
 	}
 	/* update governor state machine */
 	tegra_cpu_set_speed_cap(NULL);
@@ -337,10 +280,7 @@ void tegra_auto_hotplug_governor(unsigned int cpu_freq, bool suspend)
 
 		/* Switch to G-mode if suspend rate is high enough */
 		if (is_lp_cluster() && (cpu_freq >= idle_bottom_freq)) {
-			if (!clk_set_parent(cpu_clk, cpu_g_clk)) {
-				hp_stats_update(CONFIG_NR_CPUS, false);
-				hp_stats_update(0, true);
-			}
+		  clk_set_parent(cpu_clk, cpu_g_clk);
 		}
 		return;
 	}
@@ -428,7 +368,6 @@ int tegra_auto_hotplug_init(struct mutex *cpu_lock)
 
 	tegra3_cpu_lock = cpu_lock;
 	hp_state = INITIAL_STATE;
-	hp_init_stats();
 	pr_info("Tegra auto-hotplug initialized: %s\n",
 		(hp_state == TEGRA_HP_DISABLED) ? "disabled" : "enabled");
 
@@ -440,62 +379,8 @@ int tegra_auto_hotplug_init(struct mutex *cpu_lock)
 }
 
 #ifdef CONFIG_DEBUG_FS
-
-static struct dentry *hp_debugfs_root;
-
 struct pm_qos_request_list min_cpu_req;
 struct pm_qos_request_list max_cpu_req;
-
-static int hp_stats_show(struct seq_file *s, void *data)
-{
-	int i;
-	u64 cur_jiffies = get_jiffies_64();
-
-	mutex_lock(tegra3_cpu_lock);
-	if (hp_state != TEGRA_HP_DISABLED) {
-		for (i = 0; i <= CONFIG_NR_CPUS; i++) {
-			bool was_up = (hp_stats[i].up_down_count & 0x1);
-			hp_stats_update(i, was_up);
-		}
-	}
-	mutex_unlock(tegra3_cpu_lock);
-
-	seq_printf(s, "%-15s ", "cpu:");
-	for (i = 0; i < CONFIG_NR_CPUS; i++) {
-		seq_printf(s, "G%-9d ", i);
-	}
-	seq_printf(s, "LP\n");
-
-	seq_printf(s, "%-15s ", "transitions:");
-	for (i = 0; i <= CONFIG_NR_CPUS; i++) {
-		seq_printf(s, "%-10u ", hp_stats[i].up_down_count);
-	}
-	seq_printf(s, "\n");
-
-	seq_printf(s, "%-15s ", "time plugged:");
-	for (i = 0; i <= CONFIG_NR_CPUS; i++) {
-		seq_printf(s, "%-10llu ",
-			   cputime64_to_clock_t(hp_stats[i].time_up_total));
-	}
-	seq_printf(s, "\n");
-
-	seq_printf(s, "%-15s %llu\n", "time-stamp:",
-		   cputime64_to_clock_t(cur_jiffies));
-
-	return 0;
-}
-
-static int hp_stats_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, hp_stats_show, inode->i_private);
-}
-
-static const struct file_operations hp_stats_fops = {
-	.open		= hp_stats_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= single_release,
-};
 
 static int min_cpus_get(void *data, u64 *val)
 {
@@ -520,50 +405,12 @@ static int max_cpus_set(void *data, u64 val)
 	return 0;
 }
 DEFINE_SIMPLE_ATTRIBUTE(max_cpus_fops, max_cpus_get, max_cpus_set, "%llu\n");
-
-static int __init tegra_auto_hotplug_debug_init(void)
-{
-	if (!tegra3_cpu_lock)
-		return -ENOENT;
-
-	hp_debugfs_root = debugfs_create_dir("tegra_hotplug", NULL);
-	if (!hp_debugfs_root)
-		return -ENOMEM;
-
-	pm_qos_add_request(&min_cpu_req, PM_QOS_MIN_ONLINE_CPUS,
-			   PM_QOS_DEFAULT_VALUE);
-	pm_qos_add_request(&max_cpu_req, PM_QOS_MAX_ONLINE_CPUS,
-			   PM_QOS_DEFAULT_VALUE);
-
-	if (!debugfs_create_file(
-		"min_cpus", S_IRUGO, hp_debugfs_root, NULL, &min_cpus_fops))
-		goto err_out;
-
-	if (!debugfs_create_file(
-		"max_cpus", S_IRUGO, hp_debugfs_root, NULL, &max_cpus_fops))
-		goto err_out;
-
-	if (!debugfs_create_file(
-		"stats", S_IRUGO, hp_debugfs_root, NULL, &hp_stats_fops))
-		goto err_out;
-
-	return 0;
-
-err_out:
-	debugfs_remove_recursive(hp_debugfs_root);
-	pm_qos_remove_request(&min_cpu_req);
-	pm_qos_remove_request(&max_cpu_req);
-	return -ENOMEM;
-}
-
-late_initcall(tegra_auto_hotplug_debug_init);
 #endif
 
 void tegra_auto_hotplug_exit(void)
 {
 	destroy_workqueue(hotplug_wq);
 #ifdef CONFIG_DEBUG_FS
-	debugfs_remove_recursive(hp_debugfs_root);
 	pm_qos_remove_request(&min_cpu_req);
 	pm_qos_remove_request(&max_cpu_req);
 #endif
