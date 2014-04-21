@@ -422,7 +422,7 @@ static int __init tegra_edp_debug_init(struct dentry *cpu_tegra_debugfs_root)
 #endif	/* CONFIG_TEGRA_EDP_LIMITS */
 
 #ifdef CONFIG_DEBUG_FS
-
+/*
 static struct dentry *cpu_tegra_debugfs_root;
 
 static int __init tegra_cpu_debug_init(void)
@@ -451,7 +451,7 @@ static void __exit tegra_cpu_debug_exit(void)
 }
 
 late_initcall(tegra_cpu_debug_init);
-module_exit(tegra_cpu_debug_exit);
+module_exit(tegra_cpu_debug_exit);*/
 #endif /* CONFIG_DEBUG_FS */
 
 int tegra_verify_speed(struct cpufreq_policy *policy)
@@ -463,8 +463,8 @@ unsigned int tegra_getspeed(unsigned int cpu)
 {
 	unsigned long rate;
 
-	if (cpu >= CONFIG_NR_CPUS)
-		return 0;
+	/*if (cpu >= CONFIG_NR_CPUS)
+		return 0;*/
 
 	rate = clk_get_rate(cpu_clk) / 1000;
 	return rate;
@@ -479,8 +479,8 @@ int tegra_update_cpu_speed(unsigned long rate)
 	freqs.new = rate;
 
 	rate = clk_round_rate(cpu_clk, rate * 1000);
-	if (!IS_ERR_VALUE(rate))
-		freqs.new = rate / 1000;
+	/*if (!IS_ERR_VALUE(rate))
+		freqs.new = rate / 1000;*/
 
 	if (freqs.old == freqs.new)
 		return ret;
