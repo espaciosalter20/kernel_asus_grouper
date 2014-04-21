@@ -365,11 +365,11 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
-		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-                   -fmodulo-sched -fmodulo-sched-allow-regmoves -mtune=cortex-a9 \
-                   -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
+		   -fno-strict-aliasing -fno-common -fold-unroll-loops\
+		   -Werror-implicit-function-declaration -mfpu=neon-vfpv3\
+		   -Wno-format-security -march=armv7-a\
+       -fmodulo-sched -fmodulo-sched-allow-regmoves -mtune=cortex-a9 \
+       -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
 		   -fno-delete-null-pointer-checks
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
