@@ -120,7 +120,7 @@ static int tegra_idle_enter_lp2(struct cpuidle_device *dev,
 	local_irq_disable();
 	enter = ktime_get();
 
-	tegra_cpu_idle_stats_lp2_ready(dev->cpu);
+	//tegra_cpu_idle_stats_lp2_ready(dev->cpu);
 	tegra_idle_lp2(dev, state);
 
 	exit = ktime_sub(ktime_get(), enter);
@@ -138,7 +138,7 @@ static int tegra_idle_enter_lp2(struct cpuidle_device *dev,
 		tegra_lp2_set_global_latency(state);
 		tegra_lp2_update_target_residency(state);
 	}
-	tegra_cpu_idle_stats_lp2_time(dev->cpu, us);
+	//tegra_cpu_idle_stats_lp2_time(dev->cpu, us);
 
 	return (int)us;
 }
@@ -287,7 +287,7 @@ static struct kernel_param_ops lp2_in_idle_ops = {
 	.get = lp2_in_idle_get,
 };
 module_param_cb(lp2_in_idle, &lp2_in_idle_ops, &lp2_in_idle, 0644);
-
+/*
 #if defined(CONFIG_DEBUG_FS) && defined(CONFIG_PM_SLEEP)
 static int tegra_lp2_debug_open(struct inode *inode, struct file *file)
 {
@@ -319,4 +319,4 @@ static int __init tegra_cpuidle_debug_init(void)
 }
 
 late_initcall(tegra_cpuidle_debug_init);
-#endif
+#endif*/

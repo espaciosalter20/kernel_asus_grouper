@@ -80,7 +80,7 @@ static struct clk *cpu_clk_for_dvfs;
 static struct clk *twd_clk;
 
 static int lp2_exit_latencies[5];
-
+/*
 static struct {
 	unsigned int cpu_ready_count[5];
 	unsigned int tear_down_count[5];
@@ -92,7 +92,7 @@ static struct {
 	unsigned int lp2_completed_count_bin[32];
 	unsigned int lp2_int_count[NR_IRQS];
 	unsigned int last_lp2_int_count[NR_IRQS];
-} idle_stats;
+} idle_stats;*/
 
 static inline unsigned int time_to_bin(unsigned int time)
 {
@@ -109,7 +109,7 @@ static inline unsigned int cpu_number(unsigned int n)
 {
 	return is_lp_cluster() ? 4 : n;
 }
-
+/*
 void tegra3_cpu_idle_stats_lp2_ready(unsigned int cpu)
 {
 	idle_stats.cpu_ready_count[cpu_number(cpu)]++;
@@ -119,7 +119,7 @@ void tegra3_cpu_idle_stats_lp2_time(unsigned int cpu, s64 us)
 {
 	idle_stats.cpu_wants_lp2_time[cpu_number(cpu)] += us;
 }
-
+*/
 /* Allow rail off only if all secondary CPUs are power gated, and no
    rail update is in progress */
 static bool tegra3_rail_off_is_allowed(void)
@@ -206,7 +206,7 @@ static void tegra3_idle_enter_lp2_cpu_0(struct cpuidle_device *dev,
 	ktime_t exit_time;
 	bool sleep_completed = false;
 	bool multi_cpu_entry = false;
-	int bin;
+	//int bin;
 	s64 sleep_time;
 
 	/* LP2 entry time */
@@ -274,10 +274,10 @@ static void tegra3_idle_enter_lp2_cpu_0(struct cpuidle_device *dev,
 	sleep_time = request -
 		lp2_exit_latencies[cpu_number(dev->cpu)];
 
-	bin = time_to_bin((u32)request / 1000);
+	/*bin = time_to_bin((u32)request / 1000);
 	idle_stats.tear_down_count[cpu_number(dev->cpu)]++;
 	idle_stats.lp2_count++;
-	idle_stats.lp2_count_bin[bin]++;
+	idle_stats.lp2_count_bin[bin]++;*/
 
 	trace_power_start(POWER_CSTATE, 2, dev->cpu);
 	clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_ENTER, &dev->cpu);
@@ -287,16 +287,17 @@ static void tegra3_idle_enter_lp2_cpu_0(struct cpuidle_device *dev,
 	if (tegra_idle_lp2_last(sleep_time, 0) == 0)
 		sleep_completed = true;
 	else {
-		int irq = tegra_gic_pending_interrupt();
-		idle_stats.lp2_int_count[irq]++;
+	  tegra_gic_pending_interrupt();
+		/*int irq = tegra_gic_pending_interrupt();
+		idle_stats.lp2_int_count[irq]++;*/
 	}
 
 	clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &dev->cpu);
 	exit_time = ktime_get();
 	if (!is_lp_cluster())
 		tegra_dvfs_rail_on(tegra_cpu_rail, exit_time);
-	idle_stats.in_lp2_time[cpu_number(dev->cpu)] +=
-		ktime_to_us(ktime_sub(exit_time, entry_time));
+	  /*idle_stats.in_lp2_time[cpu_number(dev->cpu)] +=
+		ktime_to_us(ktime_sub(exit_time, entry_time));*/
 
 	if (multi_cpu_entry)
 		tegra3_lp2_restore_affinity();
@@ -315,12 +316,12 @@ static void tegra3_idle_enter_lp2_cpu_0(struct cpuidle_device *dev,
 		state->exit_latency = latency;		/* for idle governor */
 		smp_wmb();
 
-		idle_stats.lp2_completed_count++;
+		/*idle_stats.lp2_completed_count++;
 		idle_stats.lp2_completed_count_bin[bin]++;
 
 		pr_debug("%lld %lld %d %d\n", request,
 			ktime_to_us(ktime_sub(exit_time, entry_time)),
-			offset, bin);
+			offset, bin);*/
 	}
 }
 
@@ -368,7 +369,7 @@ static void tegra3_idle_enter_lp2_cpu_n(struct cpuidle_device *dev,
 	tegra_twd_suspend(&twd_context);
 	tegra_lp2_set_trigger(sleep_time);
 #endif
-	idle_stats.tear_down_count[cpu_number(dev->cpu)]++;
+	//idle_stats.tear_down_count[cpu_number(dev->cpu)]++;
 
 	trace_power_start(POWER_CSTATE, 2, dev->cpu);
 
@@ -392,7 +393,7 @@ static void tegra3_idle_enter_lp2_cpu_n(struct cpuidle_device *dev,
 	clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &dev->cpu);
 #endif
 	sleep_time = ktime_to_us(ktime_sub(ktime_get(), entry_time));
-	idle_stats.in_lp2_time[cpu_number(dev->cpu)] += sleep_time;
+	//idle_stats.in_lp2_time[cpu_number(dev->cpu)] += sleep_time;
 	if (sleep_completed) {
 		/*
 		 * Stayed in LP2 for the full time until timer expires,
@@ -442,7 +443,7 @@ int tegra3_cpudile_init_soc(void)
 	return 0;
 }
 
-#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG_FS/*
 int tegra3_lp2_debug_show(struct seq_file *s, void *data)
 {
 	int bin;
@@ -529,5 +530,5 @@ int tegra3_lp2_debug_show(struct seq_file *s, void *data)
 		idle_stats.last_lp2_int_count[i] = idle_stats.lp2_int_count[i];
 	};
 	return 0;
-}
+}*/
 #endif
