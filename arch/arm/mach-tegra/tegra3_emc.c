@@ -202,14 +202,14 @@ static u32 dram_type = -1;
 
 static struct clk *emc;
 static struct clk *bridge;
-
+/*
 static struct {
 	cputime64_t time_at_clock[TEGRA_EMC_TABLE_MAX_SIZE];
 	int last_sel;
 	u64 last_update;
 	u64 clkchange_count;
 	spinlock_t spinlock;
-} emc_stats;
+} emc_stats;*/
 
 static DEFINE_SPINLOCK(emc_access_lock);
 
@@ -235,7 +235,7 @@ static inline u32 mc_readl(unsigned long addr)
 {
 	return readl((u32)mc_base + addr);
 }
-
+/*
 static void emc_last_stats_update(int last_sel)
 {
 	unsigned long flags;
@@ -255,7 +255,7 @@ static void emc_last_stats_update(int last_sel)
 		emc_stats.last_sel = last_sel;
 	}
 	spin_unlock_irqrestore(&emc_stats.spinlock, flags);
-}
+}*/
 
 static int wait_for_update(u32 status_reg, u32 bit_mask, bool updated_state)
 {
@@ -750,9 +750,9 @@ int tegra_emc_set_rate(unsigned long rate)
 	emc_timing = &tegra_emc_table[i];
 	spin_unlock_irqrestore(&emc_access_lock, flags);
 
-	emc_last_stats_update(i);
+	/*emc_last_stats_update(i);
 
-	pr_debug("%s: rate %lu setting 0x%x\n", __func__, rate, clk_setting);
+	pr_debug("%s: rate %lu setting 0x%x\n", __func__, rate, clk_setting);*/
 
 	return 0;
 }
@@ -942,11 +942,12 @@ void tegra_init_emc(const struct tegra_emc_table *table, int table_size)
 	bool max_entry = false;
 	unsigned long boot_rate, max_rate;
 	const struct clk_mux_sel *sel;
-
+  
+  /*
 	emc_stats.clkchange_count = 0;
 	spin_lock_init(&emc_stats.spinlock);
 	emc_stats.last_update = get_jiffies_64();
-	emc_stats.last_sel = TEGRA_EMC_TABLE_MAX_SIZE;
+	emc_stats.last_sel = TEGRA_EMC_TABLE_MAX_SIZE;*/
 
 	boot_rate = clk_get_rate(emc) / 1000;
 	max_rate = clk_get_max_rate(emc) / 1000;
@@ -995,8 +996,8 @@ void tegra_init_emc(const struct tegra_emc_table *table, int table_size)
 		if (!sel)
 			continue;
 
-		if (table_rate == boot_rate)
-			emc_stats.last_sel = i;
+		/*if (table_rate == boot_rate)
+			emc_stats.last_sel = i;*/
 
 		if (table_rate == max_rate)
 			max_entry = true;
@@ -1192,7 +1193,7 @@ int tegra_emc_set_eack_state(unsigned long state)
 }
 
 #ifdef CONFIG_DEBUG_FS
-
+/*
 static struct dentry *emc_debugfs_root;
 static bool eack_state = true;
 
@@ -1205,7 +1206,7 @@ static int emc_stats_show(struct seq_file *s, void *data)
 	seq_printf(s, "%-10s %-10s \n", "rate kHz", "time");
 	for (i = 0; i < tegra_emc_table_size; i++) {
 		if (tegra_emc_clk_sel[i].input == NULL)
-			continue;	/* invalid entry */
+			continue;	// invalid entry 
 
 		seq_printf(s, "%-10lu %-10llu \n", tegra_emc_table[i].rate,
 			   cputime64_to_clock_t(emc_stats.time_at_clock[i]));
@@ -1305,5 +1306,5 @@ err_out:
 	return -ENOMEM;
 }
 
-late_initcall(tegra_emc_debug_init);
+late_initcall(tegra_emc_debug_init);*/
 #endif

@@ -278,7 +278,7 @@ void tegra_throttle_exit(void)
 }
 
 #ifdef CONFIG_DEBUG_FS
-
+/*
 static int throttle_debug_set(void *data, u64 val)
 {
 	tegra_throttling_enable(val);
@@ -322,8 +322,8 @@ static ssize_t table_write(struct file *file,
 	if (copy_from_user(buf, userbuf, count))
 		return -EFAULT;
 
-	/* terminate buffer and trim - white spaces may be appended
-	 *  at the end when invoked from shell command line */
+	// terminate buffer and trim - white spaces may be appended
+	//  at the end when invoked from shell command line
 	buf[count] = '\0';
 	strim(buf);
 
@@ -334,7 +334,7 @@ static ssize_t table_write(struct file *file,
 	if ((table_idx < 0) || (table_idx >= ARRAY_SIZE(throttle_table)))
 		return -EINVAL;
 
-	/* round new settings before updating table */
+	// round new settings before updating table
 	throttle_table[table_idx].cpu_freq = clip_to_table(cpu_freq);
 	throttle_table[table_idx].core_cap_level = (core_cap_level / 50) * 50;
 	throttle_table[table_idx].ms = jiffies_to_msecs(msecs_to_jiffies(ms));
@@ -362,6 +362,6 @@ int __init tegra_throttle_debug_init(struct dentry *cpu_tegra_debugfs_root)
 		return -ENOMEM;
 
 	return 0;
-}
+}*/
 #endif /* CONFIG_DEBUG_FS */
 

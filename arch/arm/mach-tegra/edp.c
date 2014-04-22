@@ -435,7 +435,7 @@ void tegra_get_system_edp_limits(const unsigned int **limits)
 }
 
 #ifdef CONFIG_DEBUG_FS
-
+/*
 static int edp_limit_debugfs_show(struct seq_file *s, void *data)
 {
 	seq_printf(s, "%u\n", tegra_get_edp_limit());
@@ -511,5 +511,5 @@ static int __init tegra_edp_debugfs_init(void)
 	return 0;
 }
 
-late_initcall(tegra_edp_debugfs_init);
+late_initcall(tegra_edp_debugfs_init);*/
 #endif /* CONFIG_DEBUG_FS */
