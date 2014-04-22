@@ -39,8 +39,8 @@
 #include "clock.h"
 
 #define INITIAL_STATE		TEGRA_HP_DISABLED
-#define UP2G0_DELAY_MS		50
-#define UP2Gn_DELAY_MS		60
+#define UP2G0_DELAY_MS		60
+#define UP2Gn_DELAY_MS		80
 #define DOWN_DELAY_MS		2000
 
 static struct mutex *tegra3_cpu_lock;
@@ -67,7 +67,7 @@ module_param(idle_bottom_freq, uint, 0644);
 static int mp_overhead = 10;
 module_param(mp_overhead, int, 0644);*/
 
-static int balance_level = 70;
+static int balance_level = 75;
 module_param(balance_level, int, 0644);
 
 static struct clk *cpu_clk;
