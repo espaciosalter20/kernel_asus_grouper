@@ -53,13 +53,13 @@
 //#define grouper_bl_enb			TEGRA_GPIO_PH3
 #define grouper_bl_pwm			TEGRA_GPIO_PH0
 #define grouper_hdmi_hpd			TEGRA_GPIO_PN7
-
+/*
 #ifdef CONFIG_TEGRA_DC
 static struct regulator *grouper_hdmi_reg;
 static struct regulator *grouper_hdmi_pll;
 static struct regulator *grouper_hdmi_vddio;
 #endif
-
+*/
 static atomic_t sd_brightness = ATOMIC_INIT(255);
 
 static struct regulator *grouper_lvds_reg;
@@ -104,7 +104,7 @@ static p_tegra_dc_bl_output bl_output;
 
 static int grouper_backlight_init(struct device *dev)
 {
-	int ret = 0;
+	//int ret = 0;
 
 	bl_output = grouper_bl_output_measured;
 
@@ -125,7 +125,7 @@ static int grouper_backlight_init(struct device *dev)
 		tegra_gpio_enable(grouper_bl_enb);
 	*/
 
-	return ret;
+	return 0;
 };
 
 static void grouper_backlight_exit(struct device *dev)
@@ -258,7 +258,7 @@ static int grouper_panel_disable(void)
 	return 0;
 }
 
-#ifdef CONFIG_TEGRA_DC
+#ifdef CONFIG_TEGRA_DC/*
 static int grouper_hdmi_vddio_enable(void)
 {
 	int ret;
@@ -336,7 +336,7 @@ static int grouper_hdmi_disable(void)
 	grouper_hdmi_pll = NULL;
 	return 0;
 }
-
+*/
 static struct resource grouper_disp1_resources[] = {
 	{
 		.name	= "irq",
@@ -357,7 +357,7 @@ static struct resource grouper_disp1_resources[] = {
 		.flags	= IORESOURCE_MEM,
 	},
 };
-
+/*
 static struct resource grouper_disp2_resources[] = {
 	{
 		.name	= "irq",
@@ -383,7 +383,7 @@ static struct resource grouper_disp2_resources[] = {
 		.end	= TEGRA_HDMI_BASE + TEGRA_HDMI_SIZE - 1,
 		.flags	= IORESOURCE_MEM,
 	},
-};
+};*/
 #endif
 
 static struct tegra_dc_mode grouper_panel_modes[] = {
@@ -504,7 +504,7 @@ static struct tegra_fb_data grouper_fb_data = {
 	.bits_per_pixel	= 32,
 //	.flags		= TEGRA_FB_FLIP_ON_PROBE,
 };
-
+/*
 static struct tegra_fb_data grouper_hdmi_fb_data = {
 	.win		= 0,
 	.xres		= 800,
@@ -537,7 +537,7 @@ static struct tegra_dc_platform_data grouper_disp2_pdata = {
 	.default_out	= &grouper_disp2_out,
 	.fb		= &grouper_hdmi_fb_data,
 	.emc_clk_rate	= 300000000,
-};
+};*/
 #endif
 
 static struct tegra_dc_out grouper_disp1_out = {
@@ -585,7 +585,7 @@ static int grouper_disp1_check_fb(struct device *dev, struct fb_info *info)
 {
 	return info->device == &grouper_disp1_device.dev;
 }
-
+/*
 static struct nvhost_device grouper_disp2_device = {
 	.name		= "tegradc",
 	.id		= 1,
@@ -594,7 +594,7 @@ static struct nvhost_device grouper_disp2_device = {
 	.dev = {
 		.platform_data = &grouper_disp2_pdata,
 	},
-};
+};*/
 #else
 static int grouper_disp1_check_fb(struct device *dev, struct fb_info *info)
 {
@@ -742,10 +742,10 @@ int __init grouper_panel_init(void)
 		gpio_request(TEGRA_GPIO_PV6, "gpio_v6");
 		tegra_gpio_enable(TEGRA_GPIO_PV6);
 	}
-
+  /*
 	tegra_gpio_enable(grouper_hdmi_hpd);
 	gpio_request(grouper_hdmi_hpd, "hdmi_hpd");
-	gpio_direction_input(grouper_hdmi_hpd);
+	gpio_direction_input(grouper_hdmi_hpd);*/
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	grouper_panel_early_suspender.suspend = grouper_panel_early_suspend;
@@ -777,13 +777,13 @@ int __init grouper_panel_init(void)
 #if defined(CONFIG_TEGRA_GRHOST) && defined(CONFIG_TEGRA_DC)
 	if (!err)
 		err = nvhost_device_register(&grouper_disp1_device);
-
+  /*
 	res = nvhost_get_resource_byname(&grouper_disp2_device,
 					 IORESOURCE_MEM, "fbmem");
 	res->start = tegra_fb2_start;
 	res->end = tegra_fb2_start + tegra_fb2_size - 1;
 	if (!err)
-		err = nvhost_device_register(&grouper_disp2_device);
+		err = nvhost_device_register(&grouper_disp2_device);*/
 #endif
 
 #if defined(CONFIG_TEGRA_GRHOST) && defined(CONFIG_TEGRA_NVAVP)
