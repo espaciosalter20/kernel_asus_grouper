@@ -39,9 +39,9 @@
 #include "clock.h"
 
 #define INITIAL_STATE		TEGRA_HP_DISABLED
-#define UP2G0_DELAY_MS		60
-#define UP2Gn_DELAY_MS		80
-#define DOWN_DELAY_MS		1000
+#define UP2G0_DELAY_MS		70
+#define UP2Gn_DELAY_MS	  80
+#define DOWN_DELAY_MS		 500
 
 static struct mutex *tegra3_cpu_lock;
 
@@ -67,7 +67,7 @@ module_param(idle_bottom_freq, uint, 0644);
 static int mp_overhead = 10;
 module_param(mp_overhead, int, 0644);*/
 
-static int balance_level = 75;
+static int balance_level = 90;
 module_param(balance_level, int, 0644);
 
 static struct clk *cpu_clk;
@@ -132,14 +132,14 @@ enum {
 	TEGRA_CPU_SPEED_SKEWED,
 };
 
-static noinline int tegra_cpu_speed_balance(void)
+static inline int tegra_cpu_speed_balance(void)
 {
 	unsigned long highest_speed = tegra_cpu_highest_speed();
 	unsigned long balanced_speed = highest_speed * balance_level / 100;
 	unsigned long skewed_speed = balanced_speed / 2;
 	unsigned int nr_cpus = num_online_cpus();
-	unsigned int max_cpus = pm_qos_request(PM_QOS_MAX_ONLINE_CPUS) ? : 4;
-	unsigned int min_cpus = pm_qos_request(PM_QOS_MIN_ONLINE_CPUS);
+	unsigned int max_cpus = 4; //pm_qos_request(PM_QOS_MAX_ONLINE_CPUS) ? : 4;
+	unsigned int min_cpus = 1; //pm_qos_request(PM_QOS_MIN_ONLINE_CPUS);
 
 	/* balanced: freq targets for all CPUs are above 50% of highest speed
 	   biased: freq target for at least one CPU is below 50% threshold
@@ -150,7 +150,7 @@ static noinline int tegra_cpu_speed_balance(void)
 	    (nr_cpus > min_cpus))
 		return TEGRA_CPU_SPEED_SKEWED;
 
-	if (((tegra_count_slow_cpus(balanced_speed) >= 1) /*||
+	if (((tegra_count_slow_cpus(balanced_speed) == 1) /*||
 	     (!tegra_cpu_edp_favor_up(nr_cpus, mp_overhead))*/ ||
 	     (highest_speed <= idle_bottom_freq) || (nr_cpus == max_cpus)) &&
 	    (nr_cpus >= min_cpus))
@@ -163,7 +163,7 @@ void disable_auto_hotplug(void)
 	hp_state=TEGRA_HP_DISABLED;
 	cancel_delayed_work(&hotplug_work);
 }
-static void tegra_auto_hotplug_work_func(struct work_struct *work)
+static inline void tegra_auto_hotplug_work_func(struct work_struct *work)
 {
 	bool up = false;
 	unsigned int cpu = nr_cpu_ids;
@@ -177,7 +177,7 @@ static void tegra_auto_hotplug_work_func(struct work_struct *work)
 	case TEGRA_HP_IDLE:
 		break;
 	case TEGRA_HP_DOWN:
-		cpu = tegra_get_slowest_cpu_n();
+		cpu = cpumask_next(0, cpu_online_mask);
 		if (cpu < nr_cpu_ids) {
 			up = false;
 		} else if (!is_lp_cluster() && !no_lp &&
@@ -207,7 +207,7 @@ static void tegra_auto_hotplug_work_func(struct work_struct *work)
 				break;
 			/* cpu speed is up, but skewed - remove one core */
 			case TEGRA_CPU_SPEED_SKEWED:
-				cpu = tegra_get_slowest_cpu_n();
+				cpu = cpumask_next(0, cpu_online_mask);
 				if (cpu < nr_cpu_ids)
 					up = false;
 				break;
@@ -225,7 +225,7 @@ static void tegra_auto_hotplug_work_func(struct work_struct *work)
 		       __func__, hp_state);
 	}
 
-	if (!up && ((now - last_change_time) < down_delay)){
+	if (!up && ((now - last_change_time) <= down_delay)){
 	  mutex_unlock(tegra3_cpu_lock);
 	  return;
 	}
@@ -265,7 +265,7 @@ static struct notifier_block min_cpus_notifier = {
 	.notifier_call = min_cpus_notify,
 };
 
-void tegra_auto_hotplug_governor(unsigned int cpu_freq, bool suspend)
+inline void tegra_auto_hotplug_governor(unsigned int cpu_freq, bool suspend)
 {
 	unsigned long up_delay, top_freq, bottom_freq;
 
